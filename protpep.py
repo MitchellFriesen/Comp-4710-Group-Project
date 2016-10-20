@@ -2,14 +2,14 @@
 import numpy as np
 from keras.layers import Convolution1D
 from keras.layers import Flatten
-from keras.layers import MaxPooling1D
-from keras.layers.core import Dense, Activation
+from keras.layers.core import Dense, Activation, Dropout
 from keras.models import Sequential
 
 possibleAA = ['G', 'P', 'A', 'V', 'L', 'I', 'M', 'C', 'F', 'Y', 'W', 'H', 'K', 'R', 'Q', 'N', 'E', 'D', 'S', 'T']
 
 np.set_printoptions(precision=3)
 np.set_printoptions(suppress=True)
+
 
 def getData(path, possibleAA, validation):
     Xfull = []
@@ -48,7 +48,6 @@ def getData(path, possibleAA, validation):
                 for aaNum in range(len(possibleAA)):
                     X[prot][protAA][aaNum] = float(Xfull[prot][protAA][aaNum])
 
-
         # create desired output matrix
         for y in Yfull:
             for i in range(256 - len(y)):
@@ -61,18 +60,19 @@ def getData(path, possibleAA, validation):
 
     return (X, Y)
 
+
 X, Y = getData("Dataset.txt", possibleAA, False)
 print "Got input data with shape: ", X.shape
 print "Got training output data with shape:", Y.shape
 
 model = Sequential()
-model.add(Convolution1D(64, 15, input_shape=(256, len(possibleAA))))
+model.add(Convolution1D(12, 5, input_shape=(256, len(possibleAA))))
 model.add(Activation('relu'))
-model.add(MaxPooling1D(pool_length=2))
 model.add(Flatten())
-model.add(Dense(500, init='normal', activation='relu'))
 model.add(Dense(100, init='normal', activation='relu'))
-model.add(Activation('relu'))
+model.add(Dropout(0.2))
+model.add(Dense(50, init='normal', activation='relu'))
+model.add(Dropout(0.2))
 model.add(Dense(256))
 model.add(Activation('sigmoid'))
 
@@ -81,7 +81,7 @@ model.compile(loss='binary_crossentropy', optimizer='nadam', metrics=['accuracy'
 print "Compiled"
 
 print "Fitting..."
-model.fit(X, Y, nb_epoch=50, batch_size=10)
+model.fit(X, Y, nb_epoch=400, batch_size=10)
 scores = model.evaluate(X, Y)
 print "Fitting complete"
 
@@ -110,6 +110,6 @@ print "  Overall sensitivity is: ", (sum / count)
 print "  Overall specificity is: ", (sumz / countz)
 
 print "  Expected binding sites for a sample protein:"
-print Yval[0]
-print "  Correct binding sites for sample protein:"
 print(predict[0])
+print "  Correct binding sites for sample protein:"
+print Yval[0]
